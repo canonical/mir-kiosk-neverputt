@@ -1,0 +1,94 @@
+name: mir-kiosk-neverputt
+adopt-info: neverputt
+summary: neverputt packaged as a mir-kiosk snap
+description: neverputt packaged as a mir-kiosk snap
+confinement: strict
+grade: stable
+base: core18
+license: GPL-2.0
+
+environment:
+  SHELL: bash
+  LC_ALL: C.UTF-8
+  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:${SNAP}/usr/lib/:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
+  PATH: $SNAP/bin/:$SNAP/usr/bin/:${SNAP}/usr/games:${PATH}
+  # XDG config
+  XDG_CACHE_HOME:  $SNAP_USER_COMMON/.cache
+  XDG_CONFIG_DIRS: ${SNAP}/etc/xdg:$XDG_CONFIG_DIRS
+  XDG_CONFIG_HOME: $SNAP_USER_DATA/.config
+  # Prep EGL
+  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
+  LIBGL_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+  LIBVA_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+  # Prep SDL
+  SDL_VIDEODRIVER: wayland
+
+layout:
+  /usr/share:
+    bind: $SNAP/usr/share
+  /etc/fonts:
+    bind: $SNAP/etc/fonts
+  /usr/games:
+    bind: $SNAP/usr/games
+
+plugs:
+  wayland:
+  opengl:
+  pulseaudio:
+  alsa:
+  x11: # We DON'T use X11, but this allows some UDEV access neverputt wants
+
+apps:
+  daemon:
+    command: run-daemon wayland-launch neverputt
+    daemon: simple
+    restart-condition: on-failure
+    environment:
+      # Prep PulseAudio
+      PULSE_SYSTEM: 1
+      PULSE_RUNTIME_PATH: /var/run/pulse
+
+  mir-kiosk-neverputt:
+    command: wayland-launch neverputt
+    desktop: usr/share/applications/neverputt.desktop
+    environment:
+      # Prep PulseAudio
+      PULSE_SERVER: unix:$XDG_RUNTIME_DIR/../pulse/native
+
+parts:
+  neverputt:
+    plugin: nil
+    override-pull: |
+      snapcraftctl pull
+      snapcraftctl set-version `LANG=C apt-cache policy neverputt | sed -rne 's/^\s+Candidate:\s+([^-]*)-.+$/\1/p'`
+    stage-packages:
+      - neverputt
+
+  config:
+    plugin: dump
+    source: config
+
+  mir-kiosk-snap-launch:
+    plugin: dump
+    source: https://github.com/MirServer/mir-kiosk-snap-launch.git
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl pulseaudio alsa wayland
+
+  sdl2:
+    plugin: nil
+    stage-packages:
+      - libsdl2-2.0-0
+      - libsdl2-image-2.0-0
+      - libsdl2-mixer-2.0-0
+      - libsdl2-net-2.0-0
+
+  mesa:
+    plugin: nil
+    stage-packages:
+      - libgl1-mesa-dri
+      - libwayland-egl1-mesa
+      - libglu1-mesa
+
+  wayland:
+    plugin: nil
+    stage-packages:
+      - libwayland-client0
