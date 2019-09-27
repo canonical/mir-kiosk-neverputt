@@ -36,7 +36,7 @@ plugs:
   opengl:
   pulseaudio:
   alsa:
-  x11: # We DON'T use X11, but this allows some UDEV access neverputt wants
+  hardware-observe: # This allows some UDEV access neverputt wants
 
 apps:
   daemon:
@@ -71,7 +71,7 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl pulseaudio alsa wayland
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl pulseaudio alsa wayland hardware-observe
 
   sdl2:
     plugin: nil
