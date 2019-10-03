@@ -8,8 +8,7 @@ base: core18
 license: GPL-2.0
 
 environment:
-  SHELL: bash
-  LC_ALL: C.UTF-8
+  # ${SNAPCRAFT_ARCH_TRIPLET} doesn't play nice with layout
   LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
   # Prep EGL
   __EGL_VENDOR_LIBRARY_DIRS: $SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
