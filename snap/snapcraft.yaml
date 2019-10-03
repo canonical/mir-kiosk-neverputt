@@ -21,8 +21,6 @@ environment:
 layout:
   /usr/share:
     bind: $SNAP/usr/share
-  /etc/fonts:
-    bind: $SNAP/etc/fonts
   /usr/games:
     bind: $SNAP/usr/games
 
