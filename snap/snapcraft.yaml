@@ -34,6 +34,7 @@ layout:
 plugs:
   wayland:
   opengl:
+  audio-playback:
   pulseaudio:
   alsa:
   hardware-observe: # This allows some UDEV access neverputt wants
@@ -71,7 +72,7 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl pulseaudio alsa wayland hardware-observe
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback pulseaudio alsa wayland hardware-observe
 
   sdl2:
     plugin: nil
