@@ -76,7 +76,9 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback pulseaudio alsa wayland hardware-observe
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback alsa wayland hardware-observe
+    stage-packages:
+     - inotify-tools
 
   sdl2:
     plugin: nil
