@@ -4,8 +4,13 @@ summary: neverputt packaged as a mir-kiosk snap
 description: neverputt packaged as a mir-kiosk snap
 confinement: strict
 grade: stable
-base: core18
+base: core20
 license: GPL-2.0
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+  - build-on: armhf
 
 environment:
   # ${SNAPCRAFT_ARCH_TRIPLET} doesn't play nice with layout
@@ -27,13 +32,15 @@ plugs:
   wayland:
   opengl:
   audio-playback:
-  pulseaudio:
   alsa:
   hardware-observe: # This allows some UDEV access neverputt wants
 
 apps:
   daemon:
-    command: run-daemon wayland-launch neverputt
+    command-chain:
+      - bin/run-daemon
+      - bin/wayland-launch
+    command: usr/games/neverputt
     daemon: simple
     restart-condition: always
     environment:
@@ -42,7 +49,9 @@ apps:
       PULSE_RUNTIME_PATH: /var/run/pulse
 
   mir-kiosk-neverputt:
-    command: wayland-launch neverputt
+    command-chain:
+      - bin/wayland-launch
+    command: usr/games/neverputt
     desktop: usr/share/applications/neverputt.desktop
     environment:
       # Prep PulseAudio
@@ -54,6 +63,9 @@ parts:
     override-pull: |
       snapcraftctl pull
       snapcraftctl set-version `LANG=C apt-cache policy neverputt | sed -rne 's/^\s+Candidate:\s+([^-]*)-.+$/\1/p'`
+    override-build: |
+      snapcraftctl build
+      sed -i s:Icon=neverputt:Icon=/usr/share/games/neverball/icon/neverputt.png:g $SNAPCRAFT_PART_INSTALL/usr/share/applications/neverputt.desktop
     stage-packages:
       - neverputt
 
@@ -64,7 +76,9 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback pulseaudio alsa wayland hardware-observe
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback alsa wayland hardware-observe
+    stage-packages:
+     - inotify-tools
 
   sdl2:
     plugin: nil
