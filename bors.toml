@@ -1,1 +1,2 @@
 status = ["Snap"]
+delete-merged-branches = true
