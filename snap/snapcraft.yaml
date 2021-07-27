@@ -13,12 +13,8 @@ architectures:
   - build-on: armhf
 
 environment:
-  # ${SNAPCRAFT_ARCH_TRIPLET} doesn't play nice with layout
-  LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
-  # Prep EGL
-  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/etc/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
-  LIBGL_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
-  LIBVA_DRIVERS_PATH: ${SNAP}/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri
+  LD_LIBRARY_PATH:    $SNAP/graphics/lib
+  LIBGL_DRIVERS_PATH: $SNAP/graphics/dri
   # Prep SDL
   SDL_VIDEODRIVER: wayland
 
@@ -27,13 +23,18 @@ layout:
     bind: $SNAP/usr/share
   /usr/games:
     bind: $SNAP/usr/games
+  /usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio:
+    bind: $SNAP/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio
 
 plugs:
   wayland:
   opengl:
   audio-playback:
-  alsa:
   hardware-observe: # This allows some UDEV access neverputt wants
+  graphics-core20:
+    interface: content
+    target: $SNAP/graphics
+    default-provider: mesa-core20
 
 apps:
   daemon:
@@ -76,7 +77,7 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback alsa wayland hardware-observe
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl audio-playback wayland hardware-observe
     stage-packages:
      - inotify-tools
 
@@ -88,14 +89,20 @@ parts:
       - libsdl2-mixer-2.0-0
       - libsdl2-net-2.0-0
 
-  mesa:
-    plugin: nil
-    stage-packages:
-      - libgl1-mesa-dri
-      - libwayland-egl1-mesa
-      - libglu1-mesa
-
   wayland:
     plugin: nil
     stage-packages:
       - libwayland-client0
+
+  cleanup:
+    after: [neverputt, config, mir-kiosk-snap-launch, sdl2, wayland]
+    plugin: nil
+    build-snaps: [ mesa-core20 ]
+    override-prime: |
+      set -eux
+      cd /snap/mesa-core20/current/egl/lib
+      find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/{} \;
+      rm -fr "$SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri"
+      for CRUFT in bug lintian man; do
+        rm -rf "$SNAPCRAFT_PRIME/usr/share/$CRUFT"
+      done
