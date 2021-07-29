@@ -15,6 +15,7 @@ architectures:
 environment:
   LD_LIBRARY_PATH:    $SNAP/graphics/lib
   LIBGL_DRIVERS_PATH: $SNAP/graphics/dri
+  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/glvnd/egl_vendor.d
   # Prep SDL
   SDL_VIDEODRIVER: wayland
 
