@@ -20,8 +20,20 @@ environment:
   SDL_VIDEODRIVER: wayland
 
 layout:
-  /usr/share:
-    bind: $SNAP/usr/share
+  /usr/share/fonts:
+    bind: $SNAP/usr/share/fonts
+  /usr/share/games:
+    bind: $SNAP/usr/share/games
+  /usr/share/icons:
+    bind: $SNAP/usr/share/icons
+  /usr/share/sounds:
+    bind: $SNAP/usr/share/sounds
+  /usr/share/X11:
+    bind: $SNAP/usr/share/X11
+  /usr/share/libdrm:
+    bind: $SNAP/graphics/libdrm
+  /usr/share/drirc.d:
+    bind: $SNAP/graphics/drirc.d
   /usr/games:
     bind: $SNAP/usr/games
   /usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio:
@@ -90,13 +102,8 @@ parts:
       - libsdl2-mixer-2.0-0
       - libsdl2-net-2.0-0
 
-  wayland:
-    plugin: nil
-    stage-packages:
-      - libwayland-client0
-
   cleanup:
-    after: [neverputt, config, mir-kiosk-snap-launch, sdl2, wayland]
+    after: [neverputt, config, mir-kiosk-snap-launch, sdl2]
     plugin: nil
     build-snaps: [ mesa-core20 ]
     override-prime: |
@@ -104,6 +111,9 @@ parts:
       cd /snap/mesa-core20/current/egl/lib
       find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/{} \;
       rm -fr "$SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri"
-      for CRUFT in bug lintian man; do
+      for CRUFT in bug drirc.d glvnd libdrm lintian man; do
+        rm -rf "$SNAPCRAFT_PRIME/usr/share/$CRUFT"
+      done
+      for CRUFT in alsa doc doc-base locale pkgconfig; do
         rm -rf "$SNAPCRAFT_PRIME/usr/share/$CRUFT"
       done
