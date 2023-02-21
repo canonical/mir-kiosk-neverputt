@@ -4,7 +4,7 @@ summary: neverputt packaged as a mir-kiosk snap
 description: neverputt packaged as a mir-kiosk snap
 confinement: strict
 grade: stable
-base: core20
+base: core22
 license: GPL-2.0
 
 architectures:
@@ -13,9 +13,11 @@ architectures:
   - build-on: armhf
 
 environment:
-  LD_LIBRARY_PATH:    $SNAP/graphics/lib
-  LIBGL_DRIVERS_PATH: $SNAP/graphics/dri
-  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/glvnd/egl_vendor.d
+  LD_LIBRARY_PATH:           $SNAP/graphics/usr/lib/:$SNAP/graphics/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:$SNAP/usr/lib/:$SNAP/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}:$SNAP/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/blas:$SNAP/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/lapack${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+  LIBGL_DRIVERS_PATH:        $SNAP/graphics/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri/
+  LIBVA_DRIVERS_PATH:        $SNAP/graphics/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri/
+  __EGL_VENDOR_LIBRARY_DIRS: $SNAP/graphics/usr/share/glvnd/egl_vendor.d
+
   # Prep SDL
   SDL_VIDEODRIVER: wayland
 
@@ -30,10 +32,10 @@ layout:
     bind: $SNAP/usr/share/sounds
   /usr/share/X11:
     bind: $SNAP/usr/share/X11
-  /usr/share/libdrm:
-    bind: $SNAP/graphics/libdrm
-  /usr/share/drirc.d:
-    bind: $SNAP/graphics/drirc.d
+  /usr/share/libdrm:  # Needed by mesa-core22-test on AMD GPUs
+    bind: $SNAP/graphics/usr/share/libdrm
+  /usr/share/drirc.d:  # Used by mesa-core22-test for app specific workarounds
+    bind: $SNAP/graphics/usr/share/drirc.d
   /usr/games:
     bind: $SNAP/usr/games
   /usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/pulseaudio:
@@ -44,10 +46,10 @@ plugs:
   opengl:
   audio-playback:
   hardware-observe: # This allows some UDEV access neverputt wants
-  graphics-core20:
+  graphics-core22:
     interface: content
     target: $SNAP/graphics
-    default-provider: mesa-core20
+    default-provider: mesa-core22-test/edge
 
 apps:
   daemon:
@@ -75,10 +77,10 @@ parts:
   neverputt:
     plugin: nil
     override-pull: |
-      snapcraftctl pull
-      snapcraftctl set-version `LANG=C apt-cache policy neverputt | sed -rne 's/^\s+Candidate:\s+([^-]*)-.+$/\1/p'`
+      craftctl default
+      craftctl set version=`LANG=C apt-cache policy neverputt | sed -rne 's/^\s+Candidate:\s+([^-]*)-.+$/\1/p'`
     override-build: |
-      snapcraftctl build
+      craftctl default
       sed -i s:Icon=neverputt:Icon=/usr/share/games/neverball/icon/neverputt.png:g $SNAPCRAFT_PART_INSTALL/usr/share/applications/neverputt.desktop
     stage-packages:
       - neverputt
@@ -90,7 +92,7 @@ parts:
   mir-kiosk-snap-launch:
     plugin: dump
     source: https://github.com/MirServer/mir-kiosk-snap-launch.git
-    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl wayland graphics-core20 hardware-observe
+    override-build:  $SNAPCRAFT_PART_BUILD/build-with-plugs.sh opengl wayland graphics-core22 hardware-observe
     stage-packages:
      - inotify-tools
 
@@ -105,12 +107,11 @@ parts:
   cleanup:
     after: [neverputt, config, mir-kiosk-snap-launch, sdl2]
     plugin: nil
-    build-snaps: [ mesa-core20 ]
+    build-snaps: [ mesa-core22-test/edge ]
     override-prime: |
       set -eux
-      cd /snap/mesa-core20/current/egl/lib
-      find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/{} \;
-      rm -fr "$SNAPCRAFT_PRIME/usr/lib/${SNAPCRAFT_ARCH_TRIPLET}/dri"
+      cd /snap/mesa-core22-test/current/usr/
+      find . -type f,l -exec rm -f $SNAPCRAFT_PRIME/usr/{} \;
       for CRUFT in bug drirc.d glvnd libdrm lintian man; do
         rm -rf "$SNAPCRAFT_PRIME/usr/share/$CRUFT"
       done
