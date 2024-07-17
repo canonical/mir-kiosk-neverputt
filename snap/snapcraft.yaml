@@ -55,6 +55,7 @@ apps:
       - bin/run-daemon
       - bin/wayland-launch
     command: usr/games/neverputt
+    desktop: usr/share/applications/neverputt.desktop
     daemon: simple
     restart-condition: always
     environment:
